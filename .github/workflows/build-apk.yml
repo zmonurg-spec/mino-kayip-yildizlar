@@ -1,0 +1,59 @@
+name: Mino Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Projeyi al
+        uses: actions/checkout@v4
+
+      - name: ZIP dosyasini ac
+        run: |
+          mkdir mino-project
+          unzip -q Mino_Kayip_Yildizlar_v0.2.zip -d mino-project
+          ls -la mino-project
+
+      - name: Node.js kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Java kur
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Android SDK kur
+        uses: android-actions/setup-android@v3
+
+      - name: Paketleri yukle
+        working-directory: mino-project
+        run: npm install
+
+      - name: Android projesini olustur
+        working-directory: mino-project
+        env:
+          CI: "1"
+          EXPO_NO_TELEMETRY: "1"
+        run: npx expo prebuild --platform android --clean
+
+      - name: APK derle
+        working-directory: mino-project/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: APK dosyasini kaydet
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mino-Kayip-Yildizlar-APK
+          path: mino-project/android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
